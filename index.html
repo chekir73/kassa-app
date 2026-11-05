@@ -46,7 +46,7 @@
             font-size: 14px; font-weight: bold; text-align: center; margin-top: 10px; cursor: pointer;
             background-color: #2b5278; color: #fff;
         }
-        .btn-qr { background-color: #2b5278; padding: 4px 8px; font-size: 11px; border-radius: 4px; border: none; color: #fff; cursor: pointer; }
+        .btn-qr { background-color: #2b5278; padding: 4px 8px; font-size: 11px; border-radius: 4px; border: none; color: #fff; cursor: pointer; margin-top: 6px; }
         .btn-primary { background-color: #4caf50; }
         
         #modal, #qr-modal {
@@ -67,60 +67,100 @@
 </head>
 <body>
 
-    <!-- Бюджет и динамический Баланс -->
+    <!-- Бюджет и Баланс (строго по Закрепу) -->
     <div class="card">
-        <div class="header">📊 Финансы компании</div>
+        <div class="header">📊 Бюджет и Баланс компании</div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
             <div>
                 <div style="font-size: 11px; color: #7f91a4;">Бюджет компании:</div>
-                <div class="amount negative">-1.500.000 VND</div>
+                <div class="amount">1.500.000 VND</div>
             </div>
             <div style="text-align: right;">
-                <div style="font-size: 11px; color: #7f91a4;">Итоговый баланс:</div>
-                <div class="amount negative" id="dynamic-balance">-297.880 VND</div>
+                <div style="font-size: 11px; color: #7f91a4;">Баланс на счете (11.07):</div>
+                <div class="amount negative">-297.880 VND</div>
             </div>
         </div>
         <button class="btn btn-primary" onclick="openAddModal()">➕ Добавить операцию</button>
     </div>
 
-    <!-- Актуальный расчет на троих -->
+    <!-- Актуальный расчет на троих (только текущий платеж 1.5 млн) -->
     <div class="card">
         <div class="header">🧮 Актуальный расчёт на троих</div>
         
         <div class="calc-block">
-            <div style="font-weight: bold; color: #4caf50; margin-bottom: 4px;">На 05.11.26</div>
-            <div class="calc-row"><span>1 500 000 ÷ 3</span> <b>500.000 VND</b></div>
-            <button class="btn-qr" onclick="showQR(500000)">💳 QR на долю</button>
-        </div>
-
-        <div class="calc-block">
-            <div style="font-weight: bold; color: #4caf50; margin-bottom: 4px;">На 09.10.26</div>
-            <div class="calc-row"><span>(6.6 млн + 65.1 тыс + 1.7 млн + 2.7 млн) ÷ 3</span> <b>3.688.367 VND</b></div>
-            <button class="btn-qr" onclick="showQR(3688367)">💳 QR на долю</button>
-        </div>
-
-        <div class="calc-block">
-            <div style="font-weight: bold; color: #4caf50; margin-bottom: 4px;">На 30.07.26</div>
-            <div class="calc-row"><span>(6.6 млн + 65.1 тыс + 1.7 млн) ÷ 3</span> <b>2.788.367 VND</b></div>
-            <button class="btn-qr" onclick="showQR(2788367)">💳 QR на долю</button>
-        </div>
-
-        <div class="calc-block">
-            <div style="font-weight: bold; color: #4caf50; margin-bottom: 4px;">На 11.07.26</div>
-            <div class="calc-row"><span>(6.6 млн + 65.1 тыс) ÷ 3</span> <b>2.221.700 VND</b></div>
-            <button class="btn-qr" onclick="showQR(2221700)">💳 QR на долю</button>
+            <div style="font-weight: bold; color: #4caf50; margin-bottom: 4px;">На 05.11.26 (Текущий)</div>
+            <div class="calc-row"><span>Оплата за заморозку филиала: 1.500.000 ÷ 3</span> <b>500.000 VND</b></div>
+            <button class="btn-qr" onclick="showQR(500000)">💳 QR на долю (500.000)</button>
         </div>
     </div>
 
-    <!-- Список операций -->
+    <!-- Свернутая история прошлых операций -->
     <div class="card">
-        <div class="header">📋 История операций</div>
-        <div id="operations-list">
-            <!-- Сюда динамически выводятся операции -->
+        <div class="header" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="toggleHistory()">
+            <span>📋 История прошлых операций (Закреп)</span>
+            <span id="history-arrow">▼ Развернуть</span>
         </div>
+        
+        <div id="history-content" class="hidden" style="margin-top: 10px;">
+            <div class="expense-item">
+                <div><b>09.10.26</b><br><span style="font-size: 13px;">Плата услуг бухгалтерии за 3 кв.</span></div>
+                <div style="text-align: right;"><b class="negative">-2.700.000</b></div>
+            </div>
+            <div class="expense-item">
+                <div><b>30.07.26</b><br><span style="font-size: 13px;">Плата услуг бухгалтерии за 2 кв.</span></div>
+                <div style="text-align: right;"><b class="negative">-1.700.000</b></div>
+            </div>
+            <div class="expense-item">
+                <div><b>11.07.26</b><br><span style="font-size: 13px;">Оплата пени за 2024 год по филиалу</span></div>
+                <div style="text-align: right;"><b class="negative">-65.100</b></div>
+            </div>
+            <div class="expense-item">
+                <div><b>07.07.26</b><br><span style="font-size: 13px;">Оплата аренды офиса (до 12.07.27)</span></div>
+                <div style="text-align: right;"><b class="negative">-6.600.000</b></div>
+            </div>
+            <div class="expense-item">
+                <div><b>20.06.26</b><br><span style="font-size: 13px;">Страховые взносы (IC0855E)</span></div>
+                <div style="text-align: right;"><b class="negative">-25.257.625</b></div>
+            </div>
+            <div class="expense-item">
+                <div><b>20.06.26</b><br><span style="font-size: 13px;">Страховые взносы (BW0569E)</span></div>
+                <div style="text-align: right;"><b class="negative">-3.279.525</b></div>
+            </div>
+            <div class="expense-item">
+                <div><b>19.06.26</b><br><span style="font-size: 13px;">Снятие с учёта / закрытие филиала</span></div>
+                <div style="text-align: right;"><b class="negative">-3.832.000</b></div>
+            </div>
+            <div class="expense-item">
+                <div><b>19.05.26</b><br><span style="font-size: 13px;">Услуги бухучета (подача отчёта)</span></div>
+                <div style="text-align: right;"><b class="negative">-324.000</b></div>
+            </div>
+            <div class="expense-item">
+                <div><b>08.04.26</b><br><span style="font-size: 13px;">Бух. услуги за 1 квартал 2026</span></div>
+                <div style="text-align: right;"><b class="negative">-2.160.000</b></div>
+            </div>
+            <div class="expense-item">
+                <div><b>17.03.26</b><br><span style="font-size: 13px;">Аудит компании</span></div>
+                <div style="text-align: right;"><b class="negative">-6.480.000</b></div>
+            </div>
+            <div class="expense-item">
+                <div><b>27.02.26</b><br><span style="font-size: 13px;">Цифровая подпись для налоговой</span></div>
+                <div style="text-align: right;"><b class="negative">-1.232.000</b></div>
+            </div>
+            <div class="expense-item">
+                <div><b>07.02.26</b><br><span style="font-size: 13px;">Подарки к Тет в налоговую Ханоя</span></div>
+                <div style="text-align: right;"><b class="negative">-3.000.000</b></div>
+            </div>
+            <div class="expense-item">
+                <div><b>29.01.26</b><br><span style="font-size: 13px;">Бухучет за 4 квартал 2025 года</span></div>
+                <div style="text-align: right;"><b class="negative">-2.916.000</b></div>
+            </div>
+        </div>
+        
+        <!-- Новые добавленные через форму операции попадут сюда -->
+        <div id="dynamic-history" style="margin-top: 8px;"></div>
     </div>
 
-    <!-- Модальное окно добавления операции -->
+    <!-- Модальное окно добавления -->
     <div id="modal" class="hidden" onclick="closeAddModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 style="margin-top:0;">Новая операция</h3>
@@ -159,53 +199,18 @@
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
 
-        // Базовый архив из Закрепа
-        let operations = [
-            { type: 'expense', date: "05.11.26", desc: "Оплата за заморозку филиала в Ханое", amount: 1500000 },
-            { type: 'expense', date: "09.10.26", desc: "Плата услуг бухгалтерии за 3 кв.", amount: 2700000 },
-            { type: 'expense', date: "30.07.26", desc: "Плата услуг бухгалтерии за 2 кв.", amount: 1700000 },
-            { type: 'expense', date: "11.07.26", desc: "Оплата пени за 2024 год по филиалу", amount: 65100 },
-            { type: 'expense', date: "07.07.26", desc: "Оплата аренды офиса (до 12.07.27)", amount: 6600000 },
-            { type: 'expense', date: "20.06.26", desc: "Страховые взносы (IC0855E)", amount: 25257625 },
-            { type: 'expense', date: "20.06.26", desc: "Страховые взносы (BW0569E)", amount: 3279525 },
-            { type: 'expense', date: "19.06.26", desc: "Снятие с учёта / закрытие филиала", amount: 3832000 },
-            { type: 'expense', date: "19.05.26", desc: "Услуги бухучета (подача отчёта)", amount: 324000 },
-            { type: 'expense', date: "08.04.26", desc: "Бух. услуги за 1 квартал 2026", amount: 2160000 },
-            { type: 'expense', date: "17.03.26", desc: "Аудит компании", amount: 6480000 },
-            { type: 'expense', date: "27.02.26", desc: "Цифровая подпись для налоговой", amount: 1232000 },
-            { type: 'expense', date: "07.02.26", desc: "Подарки к Тет в налоговую Ханоя", amount: 3000000 },
-            { type: 'expense', date: "29.01.26", desc: "Бухучет за 4 квартал 2025 года", amount: 2916000 }
-        ];
+        let customOperations = [];
 
-        function render() {
-            const listEl = document.getElementById('operations-list');
-            listEl.innerHTML = '';
-            
-            // Начальный баланс на 11.07
-            let balance = -297880;
-
-            operations.forEach(op => {
-                if (op.type === 'income') {
-                    balance += op.amount;
-                } else {
-                    balance -= op.amount;
-                }
-
-                const item = document.createElement('div');
-                item.className = 'expense-item';
-                const formattedAmt = new Intl.NumberFormat('ru-RU').format(op.amount);
-                
-                item.innerHTML = `
-                    <div><b>${op.date}</b><br><span style="font-size: 13px;">${op.desc}</span></div>
-                    <div style="text-align: right;"><b class="${op.type === 'income' ? 'positive' : 'negative'}">${op.type === 'income' ? '+' : '-'}${formattedAmt}</b></div>
-                `;
-                listEl.appendChild(item);
-            });
-
-            const balEl = document.getElementById('dynamic-balance');
-            const fmtBal = new Intl.NumberFormat('ru-RU').format(Math.abs(balance));
-            balEl.textContent = (balance < 0 ? '-' : '') + fmtBal + ' VND';
-            balEl.className = 'amount ' + (balance < 0 ? 'negative' : 'positive');
+        function toggleHistory() {
+            const content = document.getElementById('history-content');
+            const arrow = document.getElementById('history-arrow');
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                arrow.textContent = '▲ Свернуть';
+            } else {
+                content.classList.add('hidden');
+                arrow.textContent = '▼ Развернуть';
+            }
         }
 
         function openAddModal() {
@@ -230,9 +235,26 @@
                 return;
             }
 
-            operations.unshift({ type, date, desc, amount });
-            render();
+            customOperations.push({ type, date, desc, amount });
+            renderDynamic();
             closeAddModal();
+        }
+
+        function renderDynamic() {
+            const container = document.getElementById('dynamic-history');
+            container.innerHTML = '';
+            
+            customOperations.forEach(op => {
+                const item = document.createElement('div');
+                item.className = 'expense-item';
+                const formattedAmt = new Intl.NumberFormat('ru-RU').format(op.amount);
+                
+                item.innerHTML = `
+                    <div><b>${op.date}</b><br><span style="font-size: 13px;">${op.desc}</span></div>
+                    <div style="text-align: right;"><b class="${op.type === 'income' ? 'positive' : 'negative'}">${op.type === 'income' ? '+' : '-'}${formattedAmt}</b></div>
+                `;
+                container.appendChild(item);
+            });
         }
 
         function showQR(amount) {
@@ -244,8 +266,6 @@
         function closeQR() {
             document.getElementById('qr-modal').classList.add('hidden');
         }
-
-        render();
     </script>
 </body>
 </html>
