@@ -1,318 +1,488 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Касса Компании</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #18222d);
-            color: var(--tg-theme-text-color, #ffffff);
-            margin: 0;
-            padding: 12px;
-            font-size: 14px;
-        }
-        .card {
-            background-color: var(--tg-theme-secondary-bg-color, #242f3d);
-            border-radius: 10px;
-            padding: 14px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .header { font-size: 12px; color: var(--tg-theme-hint-color, #7f91a4); text-transform: uppercase; margin-bottom: 6px; font-weight: bold; letter-spacing: 0.5px; }
-        .amount { font-size: 18px; font-weight: bold; }
-        .amount.positive { color: #4caf50; }
-        .amount.negative { color: #e53935; }
-        .expense-item { 
-            border-bottom: 1px solid rgba(255,255,255,0.08); 
-            padding: 8px 0; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: flex-start; 
-        }
-        .expense-item:last-child { border-bottom: none; }
-        .calc-block {
-            background: rgba(0,0,0,0.15);
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 8px;
-            font-size: 13px;
-        }
-        .calc-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .btn {
-            display: block; width: 100%; padding: 10px; border-radius: 8px; border: none;
-            font-size: 14px; font-weight: bold; text-align: center; margin-top: 10px; cursor: pointer;
-            background-color: #2b5278; color: #fff;
-        }
-        .btn-qr { background-color: #2b5278; padding: 6px 10px; font-size: 12px; border-radius: 6px; border: none; color: #fff; cursor: pointer; margin-right: 6px; }
-        .btn-paid { background-color: #263238; padding: 6px 10px; font-size: 12px; border-radius: 6px; border: none; color: #7f91a4; cursor: pointer; }
-        .btn-paid.done { background-color: #4caf50; color: #fff; }
-        .btn-primary { background-color: #4caf50; }
-        .btn-edit-balance { background-color: transparent; border: 1px solid #7f91a4; color: #7f91a4; padding: 4px 8px; font-size: 11px; border-radius: 4px; margin-top: 6px; cursor: pointer; }
-        
-        #modal, #balance-modal, #qr-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;
-        }
-        .modal-content {
-            background: var(--tg-theme-secondary-bg-color, #242f3d); 
-            padding: 20px; border-radius: 12px; width: 85%; max-width: 350px; color: var(--tg-theme-text-color, #ffffff);
-        }
-        .input-field {
-            width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 10px; 
-            background: var(--tg-theme-bg-color, #18222d); border: 1px solid rgba(255,255,255,0.2); 
-            color: #fff; border-radius: 6px; font-size: 14px;
-        }
-        .hidden { display: none !important; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Касса Компании</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--tg-theme-bg-color, #18222d);
+    color: var(--tg-theme-text-color, #fff);
+    margin: 0; padding: 12px; font-size: 14px;
+  }
+  .card {
+    background: var(--tg-theme-secondary-bg-color, #242f3d);
+    border-radius: 10px; padding: 14px; margin-bottom: 12px;
+  }
+  .header {
+    font-size: 11px; color: var(--tg-theme-hint-color, #7f91a4);
+    text-transform: uppercase; font-weight: bold; margin-bottom: 8px;
+    letter-spacing: .5px; display: flex; justify-content: space-between;
+  }
+  .amount { font-size: 18px; font-weight: bold; }
+  .positive { color: #4caf50; }
+  .negative { color: #e53935; }
+  .muted { color: #7f91a4; font-size: 11px; }
+  .expense-item {
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    padding: 6px 0; display: flex; justify-content: space-between;
+  }
+  .expense-item:last-child { border-bottom: none; }
+  .btn {
+    display: block; width: 100%; padding: 10px; border-radius: 8px;
+    border: none; font-size: 14px; font-weight: bold; cursor: pointer;
+    background: #2b5278; color: #fff; margin-top: 8px;
+  }
+  .btn-primary { background: #4caf50; }
+  .btn-danger  { background: #e53935; }
+  .btn-ghost {
+    background: transparent; border: 1px solid #7f91a4; color: #7f91a4;
+    padding: 4px 8px; font-size: 11px; border-radius: 4px; margin-top: 4px;
+    display: inline-block; width: auto;
+  }
+  .row { display: flex; justify-content: space-between; align-items: flex-start; }
+  .chip {
+    display: inline-block; padding: 5px 8px; border-radius: 6px;
+    font-size: 11px; font-weight: bold; cursor: pointer; border: none;
+    background: #263238; color: #7f91a4; margin: 2px 2px 0 0;
+  }
+  .chip.done { background: #4caf50; color: #fff; }
+  .calc-row { display: flex; justify-content: space-between; margin: 3px 0; font-size: 13px; }
+  .hidden { display: none !important; }
+  .modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,.75);
+    display: flex; justify-content: center; align-items: center; z-index: 999;
+    padding: 16px; box-sizing: border-box;
+  }
+  .modal-content {
+    background: var(--tg-theme-secondary-bg-color, #242f3d);
+    border-radius: 12px; padding: 18px; width: 100%; max-width: 360px;
+  }
+  .input {
+    width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 8px;
+    background: var(--tg-theme-bg-color, #18222d);
+    border: 1px solid rgba(255,255,255,.15); color: #fff;
+    border-radius: 6px; font-size: 14px;
+  }
+  .input-label { font-size: 11px; color: #7f91a4; margin-bottom: 3px; display: block; }
+</style>
 </head>
 <body>
 
-    <!-- Бюджет и Баланс со всеми правками -->
-    <div class="card">
-        <div class="header">📊 Бюджет и Баланс компании</div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-            <div>
-                <div style="font-size: 11px; color: #7f91a4;">Бюджет компании:</div>
-                <div class="amount negative">-1.500.000 VND</div>
-            </div>
-            <div style="text-align: right;">
-                <div style="font-size: 11px; color: #7f91a4;">Баланс на счете (11.07):</div>
-                <div class="amount positive" id="display-balance">+297.880 VND</div>
-                <button class="btn-edit-balance" onclick="openBalanceModal()">✏️ Правка баланса</button>
-            </div>
-        </div>
-        <button class="btn btn-primary" onclick="openAddModal()">➕ Добавить расход / сбор</button>
+<!-- Компания -->
+<div class="card">
+  <div class="header"><span>📊 Бюджет и Баланс</span></div>
+  <div class="row">
+    <div>
+      <div class="muted">Бюджет компании:</div>
+      <div class="amount negative" id="disp-budget">—</div>
     </div>
-
-    <!-- Актуальный расчет на троих (активный сбор) -->
-    <div class="card">
-        <div class="header">🧮 Актуальный расчёт на троих (Сбор)</div>
-        <div id="active-collection-container">
-            <!-- Динамический активный сбор -->
-        </div>
+    <div style="text-align:right">
+      <div class="muted">Баланс на счёте:</div>
+      <div class="amount positive" id="disp-balance">—</div>
+      <div class="muted" id="disp-balance-date"></div>
+      <button class="btn-ghost" onclick="openModal('balance-modal')">✏️ Правка</button>
     </div>
+  </div>
+</div>
 
-    <!-- Свернутая история прошлых операций -->
-    <div class="card">
-        <div class="header" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="toggleHistory()">
-            <span>📋 История прошлых операций (Закреп)</span>
-            <span id="history-arrow">▼ Развернуть</span>
-        </div>
-        
-        <div id="history-content" class="hidden" style="margin-top: 10px;">
-            <div class="expense-item"><div><b>09.10.26</b><br><span style="font-size: 13px;">Плата услуг бухгалтерии за 3 кв.</span></div><div style="text-align: right;"><b class="negative">-2.700.000</b></div></div>
-            <div class="expense-item"><div><b>30.07.26</b><br><span style="font-size: 13px;">Плата услуг бухгалтерии за 2 кв.</span></div><div style="text-align: right;"><b class="negative">-1.700.000</b></div></div>
-            <div class="expense-item"><div><b>11.07.26</b><br><span style="font-size: 13px;">Оплата пени за 2024 год по филиалу</span></div><div style="text-align: right;"><b class="negative">-65.100</b></div></div>
-            <div class="expense-item"><div><b>07.07.26</b><br><span style="font-size: 13px;">Оплата аренды офиса (до 12.07.27)</span></div><div style="text-align: right;"><b class="negative">-6.600.000</b></div></div>
-            <div class="expense-item"><div><b>20.06.26</b><br><span style="font-size: 13px;">Страховые взносы (IC0855E)</span></div><div style="text-align: right;"><b class="negative">-25.257.625</b></div></div>
-            <div class="expense-item"><div><b>20.06.26</b><br><span style="font-size: 13px;">Страховые взносы (BW0569E)</span></div><div style="text-align: right;"><b class="negative">-3.279.525</b></div></div>
-            <div class="expense-item"><div><b>19.06.26</b><br><span style="font-size: 13px;">Снятие сотрудников с учёта и закрытие филиала</span></div><div style="text-align: right;"><b class="negative">-3.832.000</b></div></div>
-            <div class="expense-item"><div><b>19.05.26</b><br><span style="font-size: 13px;">Бухгалтерия: составление и подача отчёта</span></div><div style="text-align: right;"><b class="negative">-324.000</b></div></div>
-            <div class="expense-item"><div><b>08.04.26</b><br><span style="font-size: 13px;">Бухг. услуги за 1 квартал 2026</span></div><div style="text-align: right;"><b class="negative">-2.160.000</b></div></div>
-            <div class="expense-item"><div><b>17.03.26</b><br><span style="font-size: 13px;">Аудит компании</span></div><div style="text-align: right;"><b class="negative">-6.480.000</b></div></div>
-            <div class="expense-item"><div><b>27.02.26</b><br><span style="font-size: 13px;">Цифровая подпись для налоговой</span></div><div style="text-align: right;"><b class="negative">-1.232.000</b></div></div>
-            <div class="expense-item"><div><b>07.02.26</b><br><span style="font-size: 13px;">Подарки к Тет в налоговую Ханоя</span></div><div style="text-align: right;"><b class="negative">-3.000.000</b></div></div>
-            <div class="expense-item"><div><b>29.01.26</b><br><span style="font-size: 13px;">Услуги бухгалтерии за 4 квартал 2025 года</span></div><div style="text-align: right;"><b class="negative">-2.916.000</b></div></div>
-        </div>
-        
-        <div id="dynamic-history" style="margin-top: 8px;"></div>
+<!-- Активный сбор -->
+<div class="card">
+  <div class="header"><span>🧮 Активный сбор</span>
+    <span class="muted" id="active-start-date"></span>
+  </div>
+  <div id="active-collection"></div>
+</div>
+
+<!-- Архив -->
+<div class="card">
+  <div class="header" style="cursor:pointer" onclick="toggleArchive()">
+    <span>📋 Архив сборов</span>
+    <span id="archive-arrow" class="muted">▼ Развернуть</span>
+  </div>
+  <div id="archive-content" class="hidden" style="margin-top:8px"></div>
+</div>
+
+<!-- Модалка: правка баланса -->
+<div id="balance-modal" class="modal hidden" onclick="closeModal('balance-modal')">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3 style="margin-top:0">Правка баланса</h3>
+    <label class="input-label">Новый баланс (VND)</label>
+    <input type="number" id="inp-balance" class="input">
+    <label class="input-label">Дата</label>
+    <input type="text" id="inp-balance-date" class="input" placeholder="11.07.2026">
+    <button class="btn btn-primary" onclick="saveBalance()">Сохранить</button>
+    <button class="btn" style="background:transparent;border:1px solid #7f91a4;color:#7f91a4" onclick="closeModal('balance-modal')">Отмена</button>
+  </div>
+</div>
+
+<!-- Модалка: добавить расход -->
+<div id="expense-modal" class="modal hidden" onclick="closeModal('expense-modal')">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3 style="margin-top:0">Новый расход в активный сбор</h3>
+    <label class="input-label">Дата (ДД.ММ.ГГ)</label>
+    <input type="text" id="inp-exp-date" class="input" placeholder="05.11.26">
+    <label class="input-label">Описание</label>
+    <input type="text" id="inp-exp-desc" class="input" placeholder="Оплата за...">
+    <label class="input-label">Сумма (VND)</label>
+    <input type="number" id="inp-exp-amount" class="input" placeholder="1500000">
+    <button class="btn btn-primary" onclick="addExpense()">Добавить</button>
+    <button class="btn" style="background:transparent;border:1px solid #7f91a4;color:#7f91a4" onclick="closeModal('expense-modal')">Отмена</button>
+  </div>
+</div>
+
+<!-- Модалка: QR -->
+<div id="qr-modal" class="modal hidden" onclick="closeModal('qr-modal')">
+  <div class="modal-content" style="text-align:center;background:#fff;color:#000" onclick="event.stopPropagation()">
+    <h3 style="margin-top:0">Оплата доли</h3>
+    <p style="font-size:13px;color:#666">VietcomBank: <b>1031159551</b><br>
+      Сумма: <span id="qr-sum" style="color:#e53935;font-weight:bold"></span></p>
+    <img id="qr-img" style="width:100%;max-width:220px;margin:10px auto;display:block" alt="QR">
+    <button class="btn btn-danger" onclick="closeModal('qr-modal')">Закрыть</button>
+  </div>
+</div>
+
+<!-- Модалка: закрыть батч вручную -->
+<div id="close-modal" class="modal hidden" onclick="closeModal('close-modal')">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3 style="margin-top:0">Закрыть сбор вручную?</h3>
+    <p style="font-size:13px">Все неоплаченные доли будут отмечены как оплаченные. Сбор уйдёт в архив, начнётся новый.</p>
+    <button class="btn btn-primary" onclick="confirmCloseCollection()">Да, закрыть</button>
+    <button class="btn" style="background:transparent;border:1px solid #7f91a4;color:#7f91a4" onclick="closeModal('close-modal')">Отмена</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ДАННЫЕ
+   ============================================================ */
+const STORAGE_KEY = 'kassa_state_v2';
+
+const PARTICIPANTS = ['Уч. 1', 'Уч. 2', 'Уч. 3'];
+const DIVISOR = PARTICIPANTS.length;
+const BANK_BIN = '970436';
+const BANK_ACC = '1031159551';
+
+const DEFAULT_STATE = {
+  company: {
+    budget: -1500000,
+    balance: 297880,
+    balanceDate: '11.07.2026'
+  },
+  activeCollection: {
+    startDate: '05.11.26',
+    expenses: [
+      { date: '05.11.26', desc: 'Оплата за заморозку филиала в Ханое', amount: 1500000 }
+    ],
+    paidStatus: [false, false, false]
+  },
+  archive: [
+    {
+      startDate: '29.01.26', endDate: '17.03.26',
+      expenses: [
+        { date: '29.01.26', desc: 'Бухг. услуги за 4 кв. 2025', amount: 2916000 },
+        { date: '07.02.26', desc: 'Подарки к Тет в налоговую Ханоя', amount: 3000000 },
+        { date: '27.02.26', desc: 'Цифровая подпись для налоговой', amount: 1232000 },
+        { date: '17.03.26', desc: 'Аудит компании', amount: 6480000 }
+      ],
+      closedDate: '—',
+      snapshots: []
+    },
+    {
+      startDate: '08.04.26', endDate: '20.06.26',
+      expenses: [
+        { date: '08.04.26', desc: 'Бухг. услуги за 1 кв. 2026', amount: 2160000 },
+        { date: '19.05.26', desc: 'Бухгалтерия: подача отчёта', amount: 324000 },
+        { date: '19.06.26', desc: 'Снятие сотрудников с учёта, закрытие филиала', amount: 3832000 },
+        { date: '20.06.26', desc: 'Страховые взносы (IC0855E)', amount: 25257625 },
+        { date: '20.06.26', desc: 'Страховые взносы (BW0569E)', amount: 3279525 }
+      ],
+      closedDate: '20.06.26',
+      snapshots: []
+    },
+    {
+      startDate: '07.07.26', endDate: '09.10.26',
+      expenses: [
+        { date: '07.07.26', desc: 'Аренда офиса (13.07.26–12.07.27)', amount: 6600000 },
+        { date: '11.07.26', desc: 'Пени за 2024 год по филиалу', amount: 65100 },
+        { date: '30.07.26', desc: 'Бухг. услуги за 2 кв.', amount: 1700000 },
+        { date: '09.10.26', desc: 'Бухг. услуги за 3 кв.', amount: 2700000 }
+      ],
+      closedDate: '09.10.26',
+      snapshots: [
+        { date: '11.07.26', perPerson: 2221700 },
+        { date: '30.07.26', perPerson: 2788366.67 },
+        { date: '09.10.26', perPerson: 3688366.67 }
+      ]
+    }
+  ]
+};
+
+/* ============================================================
+   СОСТОЯНИЕ
+   ============================================================ */
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) { console.error('loadState', e); }
+  return JSON.parse(JSON.stringify(DEFAULT_STATE));
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e) { console.error('saveState', e); }
+}
+
+/* ============================================================
+   ХЕЛПЕРЫ
+   ============================================================ */
+function fmt(n, withPlus = false) {
+  const abs = Math.abs(n);
+  const rounded = Math.round(abs);
+  const s = new Intl.NumberFormat('ru-RU').format(rounded);
+  if (withPlus) return (n < 0 ? '-' : '+') + s;
+  return (n < 0 ? '-' : '') + s;
+}
+function fmtMoney(n) {
+  const abs = Math.abs(n);
+  const frac = Math.abs(abs - Math.round(abs)) > 0.005;
+  return new Intl.NumberFormat('ru-RU', {
+    minimumFractionDigits: frac ? 2 : 0,
+    maximumFractionDigits: 2
+  }).format(n);
+}
+function totalOf(expenses) {
+  return expenses.reduce((s, e) => s + Number(e.amount), 0);
+}
+function perPersonOf(expenses) {
+  return totalOf(expenses) / DIVISOR;
+}
+
+/* ============================================================
+   РЕНДЕР
+   ============================================================ */
+function render() {
+  renderCompany();
+  renderActive();
+  renderArchive();
+}
+
+function renderCompany() {
+  const b = document.getElementById('disp-budget');
+  b.textContent = fmt(state.company.budget) + ' VND';
+  b.className = 'amount ' + (state.company.budget < 0 ? 'negative' : 'positive');
+
+  const bal = document.getElementById('disp-balance');
+  bal.textContent = fmt(state.company.balance, true) + ' VND';
+  bal.className = 'amount ' + (state.company.balance < 0 ? 'negative' : 'positive');
+
+  document.getElementById('disp-balance-date').textContent = state.company.balanceDate || '';
+}
+
+function renderActive() {
+  const c = state.activeCollection;
+  const container = document.getElementById('active-collection');
+  document.getElementById('active-start-date').textContent = c ? 'с ' + c.startDate : '';
+
+  if (!c) {
+    container.innerHTML = '<div class="muted" style="text-align:center;padding:8px">Нет активного сбора. Добавьте расход — начнётся новый.</div>';
+    container.innerHTML += `
+      <button class="btn btn-primary" onclick="openModal('expense-modal')">➕ Новый сбор (расход)</button>`;
+    return;
+  }
+
+  const total = totalOf(c.expenses);
+  const per = perPersonOf(c.expenses);
+
+  // Список расходов
+  const items = c.expenses.map(e => `
+    <div class="expense-item">
+      <div><b>${e.date}</b><br><span style="font-size:12px">${escapeHtml(e.desc)}</span></div>
+      <div style="text-align:right"><b class="negative">-${fmt(e.amount)}</b></div>
+    </div>`).join('');
+
+  // Статусы участников
+  const chips = PARTICIPANTS.map((name, i) => `
+    <button class="chip ${c.paidStatus[i] ? 'done' : ''}" onclick="togglePaid(${i})">
+      ${c.paidStatus[i] ? '✅ ' : '⏳ '}${name}
+    </button>`).join('');
+
+  container.innerHTML = `
+    <div class="calc-row"><span>Расходов в сборе:</span><b>${c.expenses.length}</b></div>
+    ${items}
+    <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px">
+      <div class="calc-row"><span>Итого:</span><b>${fmt(total)} VND</b></div>
+      <div class="calc-row"><span>На каждого (÷${DIVISOR}):</span><b class="positive">${fmtMoney(per)} VND</b></div>
     </div>
-
-    <!-- Модалка правки баланса -->
-    <div id="balance-modal" class="hidden" onclick="closeBalanceModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <h3 style="margin-top:0;">Правка баланса счета</h3>
-            <label style="font-size: 11px; color: #7f91a4;">Новый баланс</label>
-            <input type="number" id="inp-new-balance" class="input-field" placeholder="297880">
-            <button class="btn btn-primary" onclick="saveBalance()">Обновить баланс</button>
-            <button class="btn" style="background: transparent; border: 1px solid #7f91a4; color: #7f91a4; margin-top: 6px;" onclick="closeBalanceModal()">Отмена</button>
-        </div>
+    <div style="margin-top:10px">
+      <div class="muted" style="margin-bottom:4px">Статусы оплаты:</div>
+      <div>${chips}</div>
     </div>
-
-    <!-- Модалка добавления расхода -->
-    <div id="modal" class="hidden" onclick="closeAddModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <h3 style="margin-top:0;">Новый расход / сбор</h3>
-            
-            <label style="font-size: 11px; color: #7f91a4;">Дата (ДД.ММ.ГГ)</label>
-            <input type="text" id="op-date" class="input-field" placeholder="05.11.26">
-
-            <label style="font-size: 11px; color: #7f91a4;">Описание</label>
-            <input type="text" id="op-desc" class="input-field" placeholder="Напр. Оплата за заморозку филиала">
-
-            <label style="font-size: 11px; color: #7f91a4;">Общая сумма (VND)</label>
-            <input type="number" id="op-amount" class="input-field" placeholder="1500000">
-
-            <button class="btn btn-primary" onclick="saveOperation()">Создать сбор</button>
-            <button class="btn" style="background: transparent; border: 1px solid #7f91a4; color: #7f91a4; margin-top: 6px;" onclick="closeAddModal()">Отмена</button>
-        </div>
+    <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+      <button class="chip" style="background:#2b5278;color:#fff" onclick="showQR(${per})">💳 QR (${fmtMoney(per)})</button>
+      <button class="chip" style="background:#2b5278;color:#fff" onclick="openModal('expense-modal')">➕ Расход</button>
     </div>
+    <button class="btn" style="background:transparent;border:1px solid #e53935;color:#e53935"
+            onclick="openModal('close-modal')">🔒 Закрыть сбор вручную</button>
+  `;
+}
 
-    <!-- Модалка QR-оплаты -->
-    <div id="qr-modal" class="hidden" onclick="closeQR()">
-        <div class="modal-content" style="text-align: center; color: #000; background: #fff;" onclick="event.stopPropagation()">
-            <h3 style="margin-top:0;">Оплата доли</h3>
-            <p style="font-size: 13px; color: #666;">VietcomBank: <b>1031159551</b><br>Сумма: <span id="qr-sum" style="color: #e53935; font-weight: bold;"></span></p>
-            <img id="qr-img" src="" alt="QR" style="width: 100%; max-width: 200px; margin: 10px auto; display: block;">
-            <button class="btn" style="background: #e53935; margin-top: 10px;" onclick="closeQR()">Закрыть</button>
-        </div>
-    </div>
+function renderArchive() {
+  const c = document.getElementById('archive-content');
+  if (!state.archive.length) {
+    c.innerHTML = '<div class="muted" style="text-align:center;padding:8px">Архив пуст.</div>';
+    return;
+  }
+  c.innerHTML = state.archive.slice().reverse().map(b => {
+    const total = totalOf(b.expenses);
+    const per = total / DIVISOR;
+    const expHtml = b.expenses.map(e =>
+      `<div class="expense-item">
+        <div><b>${e.date}</b><br><span style="font-size:12px">${escapeHtml(e.desc)}</span></div>
+        <div style="text-align:right"><b class="negative">-${fmt(e.amount)}</b></div>
+      </div>`).join('');
+    const snaps = (b.snapshots || []).map(s =>
+      `<div class="calc-row muted"><span>${s.date}:</span><span>${fmtMoney(s.perPerson)} / чел</span></div>`
+    ).join('');
+    return `
+      <div style="border-top:1px solid rgba(255,255,255,.1);padding:8px 0">
+        <div class="calc-row"><b>${b.startDate} → ${b.endDate}</b><b class="positive">собрано</b></div>
+        ${expHtml}
+        <div class="calc-row" style="margin-top:6px"><span>Итого:</span><b>${fmt(total)} VND</b></div>
+        <div class="calc-row"><span>На каждого:</span><b class="positive">${fmtMoney(per)} VND</b></div>
+        ${snaps}
+        ${b.closedDate && b.closedDate !== '—' ? `<div class="muted">Закрыт: ${b.closedDate}</div>` : ''}
+      </div>`;
+  }).join('');
+}
 
-    <script>
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
+/* ============================================================
+   ДЕЙСТВИЯ
+   ============================================================ */
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function toggleArchive() {
+  const c = document.getElementById('archive-content');
+  const a = document.getElementById('archive-arrow');
+  c.classList.toggle('hidden');
+  a.textContent = c.classList.contains('hidden') ? '▼ Развернуть' : '▲ Свернуть';
+}
 
-        let currentBalance = 297880;
-        
-        // Текущий активный сбор (по умолчанию — заморозка филиала из вашего Закрепа)
-        let activeCollection = {
-            date: "05.11.26",
-            desc: "Оплата за заморозку филиала в Ханое",
-            amount: 1500000,
-            paidStatus: [false, false, false] // Статусы трех участников
-        };
+// Правка баланса
+function saveBalance() {
+  const v = parseFloat(document.getElementById('inp-balance').value);
+  const d = document.getElementById('inp-balance-date').value.trim();
+  if (isNaN(v)) { alert('Введите число'); return; }
+  state.company.balance = v;
+  if (d) state.company.balanceDate = d;
+  saveState();
+  render();
+  closeModal('balance-modal');
+}
 
-        let customHistory = [];
+// Добавить расход (в активный сбор; если его нет — создать новый)
+function addExpense() {
+  const date = document.getElementById('inp-exp-date').value.trim();
+  const desc = document.getElementById('inp-exp-desc').value.trim();
+  const amount = parseFloat(document.getElementById('inp-exp-amount').value);
+  if (!date || !desc || isNaN(amount) || amount <= 0) {
+    alert('Заполните все поля корректно'); return;
+  }
+  if (!state.activeCollection) {
+    state.activeCollection = {
+      startDate: date,
+      expenses: [],
+      paidStatus: PARTICIPANTS.map(() => false)
+    };
+  }
+  state.activeCollection.expenses.push({ date, desc, amount });
+  saveState();
+  render();
+  closeModal('expense-modal');
+}
 
-        function updateBalanceDisplay() {
-            const el = document.getElementById('display-balance');
-            const fmt = new Intl.NumberFormat('ru-RU').format(Math.abs(currentBalance));
-            el.textContent = (currentBalance < 0 ? '-' : '+') + fmt + ' VND';
-            el.className = 'amount ' + (currentBalance < 0 ? 'negative' : 'positive');
-        }
+// Отметить оплату участника
+function togglePaid(i) {
+  const c = state.activeCollection;
+  if (!c) return;
+  c.paidStatus[i] = !c.paidStatus[i];
+  saveState();
+  render();
 
-        function openBalanceModal() {
-            document.getElementById('inp-new-balance').value = currentBalance;
-            document.getElementById('balance-modal').classList.remove('hidden');
-        }
-        function closeBalanceModal() { document.getElementById('balance-modal').classList.add('hidden'); }
-        function saveBalance() {
-            const val = parseInt(document.getElementById('inp-new-balance').value);
-            if (!isNaN(val)) { currentBalance = val; updateBalanceDisplay(); closeBalanceModal(); }
-        }
+  if (c.paidStatus.every(p => p)) {
+    setTimeout(() => {
+      const total = totalOf(c.expenses);
+      if (!confirm(`Все оплатили! Закрыть сбор?\nК балансу прибавится ${fmt(total)} VND`)) {
+        // откатывать не будем — пользователь сам решит
+        return;
+      }
+      finalizeCollection('все оплатили');
+    }, 150);
+  }
+}
 
-        function toggleHistory() {
-            const content = document.getElementById('history-content');
-            const arrow = document.getElementById('history-arrow');
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                arrow.textContent = '▲ Свернуть';
-            } else {
-                content.classList.add('hidden');
-                arrow.textContent = '▼ Развернуть';
-            }
-        }
+// Ручное закрытие
+function confirmCloseCollection() {
+  closeModal('close-modal');
+  finalizeCollection('вручную');
+}
 
-        function openAddModal() {
-            document.getElementById('op-date').value = new Date().toLocaleDateString('ru-RU').slice(0,8) + '26';
-            document.getElementById('op-desc').value = '';
-            document.getElementById('op-amount').value = '';
-            document.getElementById('modal').classList.remove('hidden');
-        }
-        function closeAddModal() { document.getElementById('modal').classList.add('hidden'); }
+// Общая логика закрытия батча
+function finalizeCollection(reason) {
+  const c = state.activeCollection;
+  if (!c) return;
+  const total = totalOf(c.expenses);
 
-        function saveOperation() {
-            const date = document.getElementById('op-date').value;
-            const desc = document.getElementById('op-desc').value;
-            const amount = parseInt(document.getElementById('op-amount').value);
+  // Баланс: +total (деньги поступили на счёт)
+  state.company.balance += total;
+  state.company.balanceDate = new Date().toLocaleDateString('ru-RU');
 
-            if (!date || !desc || !amount) { alert('Заполните все поля!'); return; }
+  // В архив
+  const dates = c.expenses.map(e => e.date);
+  state.archive.push({
+    startDate: c.expenses[0]?.date || c.startDate,
+    endDate: c.expenses[c.expenses.length - 1]?.date || c.startDate,
+    expenses: c.expenses.slice(),
+    closedDate: new Date().toLocaleDateString('ru-RU'),
+    snapshots: []
+  });
 
-            // Если был незавершенный сбор, отправляем его в историю перед созданием нового
-            if (activeCollection) {
-                customHistory.push(activeCollection);
-            }
+  state.activeCollection = null;
+  saveState();
+  render();
+  Telegram.WebApp.showAlert(`Сбор закрыт (${reason}). В архив.`);
+}
 
-            activeCollection = {
-                date: date,
-                desc: desc,
-                amount: amount,
-                paidStatus: [false, false, false]
-            };
+// QR
+function showQR(amount) {
+  const rounded = Math.round(amount);
+  document.getElementById('qr-sum').textContent = fmt(rounded) + ' VND';
+  document.getElementById('qr-img').src =
+    `https://img.vietqr.io/image/${BANK_BIN}-${BANK_ACC}-compact2.jpg?amount=${rounded}&addInfo=Kassa`;
+  openModal('qr-modal');
+}
 
-            renderActiveCollection();
-            renderDynamicHistory();
-            closeAddModal();
-        }
+/* ============================================================
+   УТИЛИТЫ
+   ============================================================ */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
 
-        function togglePaid(index) {
-            if (!activeCollection) return;
-            activeCollection.paidStatus[index] = !activeCollection.paidStatus[index];
-            renderActiveCollection();
-
-            // Проверяем, если все трое оплатили
-            if (activeCollection.paidStatus.every(status => status === true)) {
-                setTimeout(() => {
-                    alert('Все участники подтвердили оплату! Сбор закрыт и перенесен в историю.');
-                    currentBalance -= activeCollection.amount;
-                    updateBalanceDisplay();
-                    customHistory.push(activeCollection);
-                    activeCollection = null;
-                    renderActiveCollection();
-                    renderDynamicHistory();
-                }, 300);
-            }
-        }
-
-        function renderActiveCollection() {
-            const container = document.getElementById('active-collection-container');
-            if (!activeCollection) {
-                container.innerHTML = '<div style="color: #7f91a4; text-align: center; padding: 10px;">Нет активных сборов. Нажмите «Добавить расход / сбор».</div>';
-                return;
-            }
-
-            const perPerson = Math.round(activeCollection.amount / 3);
-            const fmtTotal = new Intl.NumberFormat('ru-RU').format(activeCollection.amount);
-            const fmtPer = new Intl.NumberFormat('ru-RU').format(perPerson);
-
-            container.innerHTML = `
-                <div class="calc-block">
-                    <div style="font-weight: bold; color: #4caf50; margin-bottom: 2px;">На ${activeCollection.date} (Активный)</div>
-                    <div style="font-size: 13px; margin-bottom: 6px;"><b>${activeCollection.desc}</b></div>
-                    <div class="calc-row"><span>Общая сумма:</span> <b>${fmtTotal} VND</b></div>
-                    <div class="calc-row"><span>Доля на каждого (на троих):</span> <b style="color: #4caf50;">${fmtPer} VND</b></div>
-                    
-                    <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px;">
-                        <div style="font-size: 11px; color: #7f91a4; margin-bottom: 6px;">Статусы оплаты участников:</div>
-                        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                            <button class="btn-qr" onclick="showQR(${perPerson})">💳 QR (${fmtPer})</button>
-                            <button class="btn-paid ${activeCollection.paidStatus[0] ? 'done' : ''}" onclick="togglePaid(0)">${activeCollection.paidStatus[0] ? '✅ Уч. 1: Оплачено' : '⏳ Уч. 1'}</button>
-                            <button class="btn-paid ${activeCollection.paidStatus[1] ? 'done' : ''}" onclick="togglePaid(1)">${activeCollection.paidStatus[1] ? '✅ Уч. 2: Оплачено' : '⏳ Уч. 2'}</button>
-                            <button class="btn-paid ${activeCollection.paidStatus[2] ? 'done' : ''}" onclick="togglePaid(2)">${activeCollection.paidStatus[2] ? '✅ Уч. 3: Оплачено' : '⏳ Уч. 3'}</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderDynamicHistory() {
-            const container = document.getElementById('dynamic-history');
-            container.innerHTML = '';
-            
-            customHistory.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'expense-item';
-                const fmt = new Intl.NumberFormat('ru-RU').format(item.amount);
-                div.innerHTML = `
-                    <div><b>${item.date}</b><br><span style="font-size: 13px;">${item.desc}</span></div>
-                    <div style="text-align: right;"><b class="negative">-${fmt}</b></div>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        function showQR(amount) {
-            document.getElementById('qr-sum').textContent = new Intl.NumberFormat('ru-RU').format(amount) + ' VND';
-            document.getElementById('qr-img').src = `https://img.vietqr.io/image/970436-1031159551-compact2.jpg?amount=${amount}&addInfo=Kassa`;
-            document.getElementById('qr-modal').classList.remove('hidden');
-        }
-        function closeQR() { document.getElementById('qr-modal').classList.add('hidden'); }
-
-        updateBalanceDisplay();
-        renderActiveCollection();
-    </script>
+/* ============================================================
+   ИНИЦИАЛИЗАЦИЯ
+   ============================================================ */
+if (window.Telegram && Telegram.WebApp) {
+  Telegram.WebApp.ready();
+  Telegram.WebApp.expand();
+}
+render();
+</script>
 </body>
 </html>
