@@ -11,311 +11,178 @@
             background-color: var(--tg-theme-bg-color, #18222d);
             color: var(--tg-theme-text-color, #ffffff);
             margin: 0;
-            padding: 16px;
+            padding: 12px;
+            font-size: 14px;
         }
         .card {
             background-color: var(--tg-theme-secondary-bg-color, #242f3d);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 12px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .header { font-size: 13px; color: var(--tg-theme-hint-color, #7f91a4); text-transform: uppercase; margin-bottom: 8px; font-weight: bold; }
-        .amount { font-size: 22px; font-weight: bold; margin-bottom: 4px; }
+        .header { font-size: 12px; color: var(--tg-theme-hint-color, #7f91a4); text-transform: uppercase; margin-bottom: 6px; font-weight: bold; letter-spacing: 0.5px; }
+        .amount { font-size: 18px; font-weight: bold; }
         .amount.positive { color: #4caf50; }
         .amount.negative { color: #e53935; }
-        .btn {
-            display: block; width: 100%; padding: 12px; border-radius: 8px; border: none;
-            font-size: 15px; font-weight: bold; text-align: center; margin-top: 10px; cursor: pointer;
-        }
-        .btn-pay { background-color: #2b5278; color: #fff; }
-        .btn-primary { background-color: #4caf50; color: #fff; }
-        .btn-danger { background-color: #e53935; color: #fff; }
-        .btn-secondary { background-color: transparent; border: 1px solid #7f91a4; color: #7f91a4; }
-        
         .expense-item { 
-            border-bottom: 1px solid rgba(255,255,255,0.1); 
-            padding: 10px 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.08); 
+            padding: 8px 0; 
             display: flex; 
             justify-content: space-between; 
-            align-items: center; 
+            align-items: flex-start; 
         }
         .expense-item:last-child { border-bottom: none; }
+        .calc-block {
+            background: rgba(0,0,0,0.15);
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-size: 13px;
+        }
+        .calc-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .btn-qr { background-color: #2b5278; padding: 4px 8px; font-size: 11px; border-radius: 4px; border: none; color: #fff; cursor: pointer; }
         .hidden { display: none !important; }
-        
-        #modal, #qr-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;
-        }
-        .modal-content {
-            background: var(--tg-theme-secondary-bg-color, #242f3d); 
-            padding: 20px; border-radius: 12px; width: 85%; max-width: 400px; color: var(--tg-theme-text-color, #ffffff);
-        }
-        .input-field {
-            width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 12px; 
-            background: var(--tg-theme-bg-color, #18222d); border: 1px solid rgba(255,255,255,0.2); 
-            color: #fff; border-radius: 6px; font-size: 16px;
-        }
-        .actions { display: flex; gap: 8px; }
     </style>
 </head>
 <body>
 
-    <!-- Шапка: Баланс и статистика -->
+    <!-- Бюджет и Баланс (с минусом) -->
     <div class="card">
-        <div class="header">📊 Бюджет компании и баланс</div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div class="header">📊 Финансы компании</div>
+        <div style="display: flex; justify-content: space-between;">
             <div>
-                <div style="font-size: 12px; color: #7f91a4;">Бюджет компании:</div>
+                <div style="font-size: 11px; color: #7f91a4;">Бюджет:</div>
                 <div class="amount">1.500.000 VND</div>
             </div>
-            <div>
-                <div style="font-size: 12px; color: #7f91a4;">Баланс на счете (11.07):</div>
-                <div class="amount positive">+297.880 VND</div>
+            <div style="text-align: right;">
+                <div style="font-size: 11px; color: #7f91a4;">Баланс на счете (11.07):</div>
+                <div class="amount negative">-297.880 VND</div>
             </div>
         </div>
-        
-        <!-- Блок добавленных итогов -->
-        <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 5px;">
-            <div>
-                <div style="font-size: 12px; color: #7f91a4;">Всего расходов:</div>
-                <div class="amount negative" id="total-expenses">0 VND</div>
-            </div>
-            <div>
-                <div style="font-size: 12px; color: #7f91a4;">Собрано на чел:</div>
-                <div class="amount positive" id="total-per-person">0 VND</div>
-            </div>
-        </div>
-
-        <button class="btn btn-primary admin-only hidden" id="btn-open-add">➕ Добавить расход</button>
     </div>
 
-    <!-- Список расходов из Закрепа -->
+    <!-- Актуальный расчет на троих -->
     <div class="card">
-        <div class="header">📋 Расходы компании (История)</div>
-        <div id="expenses-list">
-            <!-- Заполняется скриптом -->
+        <div class="header">🧮 Актуальный расчёт на троих</div>
+        
+        <div class="calc-block">
+            <div style="font-weight: bold; color: #4caf50; margin-bottom: 4px;">На 05.11.26</div>
+            <div class="calc-row"><span>1 500 000 ÷ 3</span> <b>500 000 VND</b></div>
+            <button class="btn-qr" onclick="showQR(500000)">💳 QR на долю</button>
+        </div>
+
+        <div class="calc-block">
+            <div style="font-weight: bold; color: #4caf50; margin-bottom: 4px;">На 09.10.26</div>
+            <div class="calc-row"><span>(6.6 млн + 65.1 тыс + 1.7 млн + 2.7 млн) ÷ 3</span> <b>3.688.367 VND</b></div>
+            <button class="btn-qr" onclick="showQR(3688367)">💳 QR на долю</button>
+        </div>
+
+        <div class="calc-block">
+            <div style="font-weight: bold; color: #4caf50; margin-bottom: 4px;">На 30.07.26</div>
+            <div class="calc-row"><span>(6.6 млн + 65.1 тыс + 1.7 млн) ÷ 3</span> <b>2.788.367 VND</b></div>
+            <button class="btn-qr" onclick="showQR(2788367)">💳 QR на долю</button>
+        </div>
+
+        <div class="calc-block">
+            <div style="font-weight: bold; color: #4caf50; margin-bottom: 4px;">На 11.07.26[span_0](start_span)[span_0](end_span)</div>
+            <div class="calc-row"><span>(6.6 млн + 65.1 тыс) ÷ 3</span> <b>2.221.700 VND</b></div>
+            <button class="btn-qr" onclick="showQR(2221700)">💳 QR на долю</button>
         </div>
     </div>
 
-    <!-- Модалка добавления/редактирования -->
-    <div id="modal" class="hidden">
-        <div class="modal-content">
-            <h3 id="modal-title" style="margin-top:0;">Новый расход</h3>
-            <input type="hidden" id="edit-id">
-            <label style="font-size: 12px; color: #7f91a4;">Описание</label>
-            <input type="text" id="inp-desc" class="input-field" placeholder="Напр. Аренда офиса">
-            
-            <label style="font-size: 12px; color: #7f91a4;">Сумма (VND)</label>
-            <input type="number" id="inp-amount" class="input-field" placeholder="Напр. 1500000">
-            
-            <label style="font-size: 12px; color: #7f91a4;">Дата (ДД.ММ.ГГ)</label>
-            <input type="text" id="inp-date" class="input-field" placeholder="05.11.26">
-            
-            <div class="actions">
-                <button class="btn btn-primary" id="btn-save">Сохранить</button>
-                <button class="btn btn-secondary" id="btn-cancel">Отмена</button>
-            </div>
+    <!-- История операций (Приходы и Расходы) -->
+    <div class="card">
+        <div class="header">📋 История операций (Приходы / Расходы)</div>
+        
+        <!-- Пример записи прихода (поступления) -->
+        <div class="expense-item">
+            <div><b>12.07.26</b><br><span style="font-size: 13px; color: #4caf50;">Поступление на расчетный счет</span></div>
+            <div style="text-align: right;"><b class="positive">+500.000</b></div>
+        </div>
+
+        <div class="expense-item">
+            <div><b>05.11.26</b><br><span style="font-size: 13px;">Оплата за заморозку филиала в Ханое</span></div>
+            <div style="text-align: right;"><b class="negative">-1.500.000</b></div>
+        </div>
+        <div class="expense-item">
+            <div><b>09.10.26</b><br><span style="font-size: 13px;">Плата услуг бухгалтерии за 3 кв.[span_1](start_span)[span_1](end_span)</span></div>
+            <div style="text-align: right;"><b class="negative">-2.700.000</b></div>
+        </div>
+        <div class="expense-item">
+            <div><b>30.07.26</b><br><span style="font-size: 13px;">Плата услуг бухгалтерии за 2 кв.[span_2](start_span)[span_2](end_span)</span></div>
+            <div style="text-align: right;"><b class="negative">-1.700.000</b></div>
+        </div>
+        <div class="expense-item">
+            <div><b>11.07.26</b><br><span style="font-size: 13px;">Оплата пени за 2024 год по филиалу[span_3](start_span)[span_3](end_span)</span></div>
+            <div style="text-align: right;"><b class="negative">-65.100</b></div>
+        </div>
+        <div class="expense-item">
+            <div><b>07.07.26</b><br><span style="font-size: 13px;">Оплата аренды офиса (до 12.07.27)[span_4](start_span)[span_4](end_span)</span></div>
+            <div style="text-align: right;"><b class="negative">-6.600.000</b></div>
+        </div>
+        <div class="expense-item">
+            <div><b>20.06.26</b><br><span style="font-size: 13px;">Страховые взносы (IC0855E)</span></div>
+            <div style="text-align: right;"><b class="negative">-25.257.625</b></div>
+        </div>
+        <div class="expense-item">
+            <div><b>20.06.26</b><br><span style="font-size: 13px;">Страховые взносы (BW0569E)</span></div>
+            <div style="text-align: right;"><b class="negative">-3.279.525</b></div>
+        </div>
+        <div class="expense-item">
+            <div><b>19.06.26</b><br><span style="font-size: 13px;">Снятие с учёта / закрытие филиала</span></div>
+            <div style="text-align: right;"><b class="negative">-3.832.000</b></div>
+        </div>
+        <div class="expense-item">
+            <div><b>19.05.26</b><br><span style="font-size: 13px;">Услуги бухучета (подача отчёта)</span></div>
+            <div style="text-align: right;"><b class="negative">-324.000</b></div>
+        </div>
+        <div class="expense-item">
+            <div><b>08.04.26</b><br><span style="font-size: 13px;">Бух. услуги за 1 квартал 2026</span></div>
+            <div style="text-align: right;"><b class="negative">-2.160.000</b></div>
+        </div>
+        <div class="expense-item">
+            <div><b>17.03.26</b><br><span style="font-size: 13px;">Аудит компании</span></div>
+            <div style="text-align: right;"><b class="negative">-6.480.000</b></div>
+        </div>
+        <div class="expense-item">
+            <div><b>27.02.26</b><br><span style="font-size: 13px;">Цифровая подпись для налоговой</span></div>
+            <div style="text-align: right;"><b class="negative">-1.232.000</b></div>
+        </div>
+        <div class="expense-item">
+            <div><b>07.02.26</b><br><span style="font-size: 13px;">Подарки к Тет в налоговую Ханоя</span></div>
+            <div style="text-align: right;"><br><span style="font-size: 13px;">Подарки к Тет в налоговую Ханоя</span></div>
+            <div style="text-align: right;"><b class="negative">-3.000.000</b></div>
+        </div>
+        <div class="expense-item">
+            <div><b>29.01.26</b><br><span style="font-size: 13px;">Бухучет за 4 квартал 2025 года</span></div>
+            <div style="text-align: right;"><b class="negative">-2.916.000</b></div>
         </div>
     </div>
 
     <!-- Модалка QR-оплаты -->
-    <div id="qr-modal" class="hidden">
-        <div class="modal-content" style="text-align: center; color: #000; background: #fff;">
-            <h3 style="margin-top:0;">Оплата доли: <span id="qr-amount-text">0</span> VND</h3>
-            <p style="font-size: 12px; color: #666;">VietcomBank<br>Счет: 1031159551</p>
-            <img id="qr-image" src="" alt="QR Code" style="width: 100%; max-width: 220px; margin: 10px auto; display: block;">
-            <button class="btn btn-pay" id="btn-close-qr" style="margin-top: 10px; color: #fff;">Закрыть</button>
+    <div id="qr-modal" class="hidden" onclick="closeQR()">
+        <div style="background: #fff; padding: 20px; border-radius: 10px; width: 80%; max-width: 300px; text-align: center; color: #000;" onclick="event.stopPropagation()">
+            <h3 style="margin-top:0;">Оплата доли</h3>
+            <p style="font-size: 13px; color: #666;">VietcomBank: <b>1031159551</b><br>Сумма: <span id="qr-sum" style="color: #e53935; font-weight: bold;"></span></p>
+            <img id="qr-img" src="" alt="QR" style="width: 100%; max-width: 200px; margin: 10px auto; display: block;">
+            <button class="btn-qr" style="background: #e53935; margin-top: 10px; padding: 8px 16px;" onclick="closeQR()">Закрыть</button>
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-      import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <script>
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
 
-      const firebaseConfig = {
-        apiKey: "AIzaSyCR8QpLtekoGFJk997E_RjqI6uQ6eEms3Q",
-        authDomain: "kassa-nvh.firebaseapp.com",
-        projectId: "kassa-nvh",
-        storageBucket: "kassa-nvh.firebasestorage.app",
-        messagingSenderId: "553337195537",
-        appId: "1:553337195537:web:ce5aaff66a92195bba35b0"
-      };
+        function showQR(amount) {
+            document.getElementById('qr-sum').textContent = new Intl.NumberFormat('ru-RU').format(amount) + ' VND';
+            document.getElementById('qr-img').src = `https://img.vietqr.io/image/970436-1031159551-compact2.jpg?amount=${amount}&addInfo=Kassa`;
+            document.getElementById('qr-modal').classList.remove('hidden');
+        }
 
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
-
-      window.Telegram.WebApp.ready();
-      window.Telegram.WebApp.expand();
-      
-      const ADMIN_ID = 688295549;
-      const userId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
-      const isAdmin = userId === ADMIN_ID;
-
-      if (isAdmin) {
-          document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
-      }
-
-      const formatVND = (num) => new Intl.NumberFormat('ru-RU').format(num) + ' VND';
-
-      // Предустановленные данные из вашего Закрепа
-      const initialExpenses = [
-          { date: "05.11.26", desc: "Оплата за заморозку филиала в Ханое", amount: 1500000 },
-          { date: "09.10.26", desc: "Плата услуг бухгалтерии за 3 квартал", amount: 2700000 },
-          { date: "30.07.26", desc: "Плата услуг бухгалтерии за 2 квартал", amount: 1700000 },
-          { date: "11.07.26", desc: "Оплата пени за 2024 год по филиалу", amount: 65100 },
-          { date: "07.07.26", desc: "Оплата аренды офиса (13.07.2026–12.07.2027)", amount: 6600000 },
-          { date: "20.06.26", desc: "Страховые взносы (IC0855E)", amount: 25257625 },
-          { date: "20.06.26", desc: "Страховые взносы (BW0569E)", amount: 3279525 },
-          { date: "19.06.26", desc: "Снятие сотрудников с учёта и закрытие филиала", amount: 3832000 },
-          { date: "19.05.26", desc: "Услуга бухгалтерии: составление и подача отчёта", amount: 324000 },
-          { date: "08.04.26", desc: "Бухгалтерские услуги за 1 квартал 2026", amount: 2160000 },
-          { date: "17.03.26", desc: "Аудит компании", amount: 6480000 },
-          { date: "27.02.26", desc: "Цифровая подпись для налоговой", amount: 1232000 },
-          { date: "07.02.26", desc: "Подарки к Тет в налоговую Ханоя", amount: 3000000 },
-          { date: "29.01.26", desc: "Услуги бухгалтерии за 4 квартал 2025 года", amount: 2916000 }
-      ];
-
-      // ИСПРАВЛЕННАЯ ИНИЦИАЛИЗАЦИЯ: проверяем наличие КАЖДОЙ записи, а не пустоту всей базы
-      async function initDB() {
-          try {
-              const snap = await getDocs(collection(db, "expenses"));
-              // Создаем уникальные ключи существующих записей (дата + описание)
-              const existingKeys = snap.docs.map(doc => doc.data().date + "|" + doc.data().desc);
-              
-              for (let item of initialExpenses) {
-                  const key = item.date + "|" + item.desc;
-                  if (!existingKeys.includes(key)) {
-                      await addDoc(collection(db, "expenses"), item);
-                      console.log(`Добавлена запись: ${item.desc}`);
-                  }
-              }
-          } catch (e) {
-              console.error("Ошибка инициализации БД: ", e);
-          }
-      }
-      
-      // Запускаем инициализацию
-      initDB();
-
-      // Слушаем базу в реальном времени
-      onSnapshot(collection(db, "expenses"), (snapshot) => {
-          const listEl = document.getElementById('expenses-list');
-          listEl.innerHTML = '';
-          
-          let totalSum = 0;
-
-          // Сортировка по дате (сначала новые)
-          const sortedDocs = snapshot.docs.sort((a, b) => {
-              const parseDate = (str) => {
-                  if(!str) return 0;
-                  const [d, m, y] = str.split('.');
-                  return new Date(`20${y}-${m}-${d}`).getTime();
-              };
-              return parseDate(b.data().date) - parseDate(a.data().date);
-          });
-
-          sortedDocs.forEach((docSnap) => {
-              const data = docSnap.data();
-              const id = docSnap.id;
-              totalSum += Number(data.amount || 0);
-
-              const perPerson = Math.round(data.amount / 3);
-
-              const item = document.createElement('div');
-              item.className = 'expense-item';
-              item.innerHTML = `
-                  <div style="flex-grow: 1; padding-right: 8px;">
-                      <div style="font-weight: bold; font-size: 14px; line-height: 1.2;">${data.desc}</div>
-                      <div style="font-size: 12px; color: #7f91a4; margin-top: 4px;">${data.date} • Общая: ${formatVND(data.amount)}</div>
-                      <div style="font-size: 12px; color: #4caf50; margin-top: 2px;">Доля на чел: <b>${formatVND(perPerson)}</b></div>
-                  </div>
-                  <div style="display: flex; gap: 4px; align-items: center;">
-                      <button class="btn btn-pay btn-qr" style="padding: 6px 8px; font-size: 11px; margin:0;" data-amount="${perPerson}">QR</button>
-                      ${isAdmin ? `
-                          <button class="btn btn-secondary btn-edit" style="padding: 6px 6px; font-size: 11px; margin:0;" data-id="${id}" data-desc="${data.desc}" data-amount="${data.amount}" data-date="${data.date}">✏️</button>
-                          <button class="btn btn-danger btn-del" style="padding: 6px 6px; font-size: 11px; margin:0;" data-id="${id}">🗑️</button>
-                      ` : ''}
-                  </div>
-              `;
-              listEl.appendChild(item);
-          });
-
-          // Обновляем верхнюю статистику
-          document.getElementById('total-expenses').textContent = formatVND(totalSum);
-          document.getElementById('total-per-person').textContent = formatVND(Math.round(totalSum / 3));
-
-          // Навешиваем обработчики
-          document.querySelectorAll('.btn-qr').forEach(btn => {
-              btn.onclick = (e) => {
-                  const amt = e.target.dataset.amount;
-                  document.getElementById('qr-amount-text').textContent = formatVND(amt);
-                  document.getElementById('qr-image').src = `https://img.vietqr.io/image/970436-1031159551-compact2.jpg?amount=${amt}&addInfo=Kassa`;
-                  document.getElementById('qr-modal').classList.remove('hidden');
-              };
-          });
-
-          if (isAdmin) {
-              document.querySelectorAll('.btn-del').forEach(btn => {
-                  btn.onclick = async (e) => {
-                      if (confirm('Удалить эту запись?')) {
-                          await deleteDoc(doc(db, "expenses", e.target.dataset.id));
-                      }
-                  };
-              });
-
-              document.querySelectorAll('.btn-edit').forEach(btn => {
-                  btn.onclick = (e) => {
-                      const ds = e.target.dataset;
-                      document.getElementById('edit-id').value = ds.id;
-                      document.getElementById('inp-desc').value = ds.desc;
-                      document.getElementById('inp-amount').value = ds.amount;
-                      document.getElementById('inp-date').value = ds.date;
-
-                      document.getElementById('modal-title').textContent = 'Редактировать расход';
-                      document.getElementById('modal').classList.remove('hidden');
-                  };
-              });
-          }
-      });
-
-      document.getElementById('btn-open-add').onclick = () => {
-          document.getElementById('edit-id').value = '';
-          document.getElementById('inp-desc').value = '';
-          document.getElementById('inp-amount').value = '';
-          document.getElementById('inp-date').value = new Date().toLocaleDateString('ru-RU').slice(0,8) + '26';
-          document.getElementById('modal-title').textContent = 'Новый расход';
-          document.getElementById('modal').classList.remove('hidden');
-      };
-
-      document.getElementById('btn-cancel').onclick = () => {
-          document.getElementById('modal').classList.add('hidden');
-      };
-
-      document.getElementById('btn-close-qr').onclick = () => {
-          document.getElementById('qr-modal').classList.add('hidden');
-      };
-
-      document.getElementById('btn-save').onclick = async () => {
-          const editId = document.getElementById('edit-id').value;
-          const desc = document.getElementById('inp-desc').value;
-          const amount = parseInt(document.getElementById('inp-amount').value);
-          const date = document.getElementById('inp-date').value;
-
-          if (!desc || !amount || !date) {
-              alert('Заполните все поля!');
-              return;
-          }
-
-          if (editId) {
-              await updateDoc(doc(db, "expenses", editId), { desc, amount, date });
-          } else {
-              await addDoc(collection(db, "expenses"), { desc, amount, date });
-          }
-
-          document.getElementById('modal').classList.add('hidden');
-      };
+        function closeQR() {
+            document.getElementById('qr-modal').classList.add('hidden');
+        }
     </script>
 </body>
 </html>
