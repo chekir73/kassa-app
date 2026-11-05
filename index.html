@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Касса Компании</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #18222d);
+            color: var(--tg-theme-text-color, #ffffff);
+            margin: 0;
+            padding: 16px;
+        }
+        .card {
+            background-color: var(--tg-theme-secondary-bg-color, #242f3d);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header { font-size: 14px; color: var(--tg-theme-hint-color, #7f91a4); text-transform: uppercase; margin-bottom: 8px; font-weight: bold; }
+        .amount { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
+        .amount.positive { color: #4caf50; }
+        .amount.negative { color: #e53935; }
+        .btn {
+            display: block; width: 100%; padding: 12px; border-radius: 8px; border: none;
+            font-size: 16px; font-weight: bold; text-align: center; margin-top: 12px; cursor: pointer;
+        }
+        .btn-pay { background-color: #2b5278; color: #fff; }
+        .btn-ask { background-color: transparent; border: 1px solid #2b5278; color: #2b5278; }
+        .btn-admin { background-color: #4caf50; color: #fff; }
+        .btn-add { background-color: #2b5278; color: #fff; margin-top: 16px; }
+        .archive-item { border-bottom: 1px solid rgba(255,255,255,0.1); padding: 8px 0; font-size: 14px; display: flex; justify-content: space-between; align-items: center;}
+        .archive-item:last-child { border-bottom: none; }
+        .hidden { display: none !important; }
+        #qr-modal, #add-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: #fff; padding: 20px; border-radius: 12px; text-align: center; color: #000; width: 80%;
+        }
+        .modal-content img { width: 100%; max-width: 250px; margin: 10px auto; display: block; }
+        .input-field {
+            width: 90%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px;
+        }
+        .delete-btn { background: #e53935; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <!-- Блок 1: Баланс -->
+    <div class="card">
+        <div class="header">🏦 Банковский счёт (справочно)</div>
+        <div class="amount positive" id="bank-balance">+297.880 VND</div>
+        <div style="font-size: 12px; color: #7f91a4;">на 11.07.2026</div>
+    </div>
+
+    <!-- Блок 2: Текущий сбор -->
+    <div class="card" id="current-debt-card" style="border: 1px solid #e53935;">
+        <div class="header" style="color: #e53935;">🚨 Текущий сбор (Долг: <span id="total-debt">-1.500.000</span> VND)</div>
+        <div style="font-size: 14px; margin-bottom: 12px;" id="debt-desc">Заморозка филиалов в Ханое (05.11.26)</div>
+        <div class="amount">К оплате: <span id="per-person-debt">500.000</span> VND</div>
+        <div style="font-size: 12px; color: #7f91a4;">с каждого участника</div>
+        
+        <button class="btn btn-pay" id="btn-show-qr">Оплатить по QR</button>
+        <button class="btn btn-ask" id="btn-ask-question">Задать вопрос</button>
+        <button class="btn btn-admin hidden" id="btn-mark-paid">✅ Отметить как собранное</button>
+    </div>
+
+    <div class="card hidden" id="no-debt-card" style="border: 1px solid #4caf50; text-align: center;">
+         <div class="header" style="color: #4caf50; margin-bottom:0;">✅ Текущих сборов нет</div>
+    </div>
+
+    <!-- Блок 3: Архив -->
+    <div class="card">
+        <div class="header">✅ Архив (Собрано и оплачено)</div>
+        <div id="archive-list">
+            <!-- Динамический список -->
+        </div>
+        <button class="btn btn-add admin-only hidden" id="btn-add-expense">➕ Добавить новый расход</button>
+    </div>
+
+    <!-- Модалки -->
+    <div id="qr-modal" class="hidden">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">Оплата доли: <span id="qr-amount-text">500.000</span> VND</h3>
+            <p style="font-size: 12px; color: #666;">VietcomBank<br>Счет: 1031159551</p>
+            <img id="qr-image" src="" alt="QR Code">
+            <button class="btn btn-pay" id="btn-close-qr" style="margin-top: 10px;">Закрыть</button>
+        </div>
+    </div>
+
+    <div id="add-modal" class="hidden">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">Новый расход</h3>
+            <input type="text" id="new-desc" class="input-field" placeholder="Описание (напр. Аренда)">
+            <input type="number" id="new-amount" class="input-field" placeholder="Сумма в VND">
+            <input type="date" id="new-date" class="input-field">
+            <button class="btn btn-admin" id="btn-save-new">Сохранить (Долг)</button>
+            <button class="btn btn-ask" id="btn-close-add" style="margin-top: 10px;">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyCR8QpLtekoGFJk997E_RjqI6uQ6eEms3Q",
+        authDomain: "kassa-nvh.firebaseapp.com",
+        projectId: "kassa-nvh",
+        storageBucket: "kassa-nvh.firebasestorage.app",
+        messagingSenderId: "553337195537",
+        appId: "1:553337195537:web:ce5aaff66a92195bba35b0"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+      const ADMIN_ID = 688295549;
+      const userId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
+      const isAdmin = userId === ADMIN_ID;
+
+      if (isAdmin) {
+          document.querySelectorAll('.admin-only, .btn-admin').forEach(el => el.classList.remove('hidden'));
+      }
+
+      const formatVND = (num) => new Intl.NumberFormat('ru-RU').format(num) + ' VND';
+
+      // Слушаем изменения в базе данных
+      const q = query(collection(db, "expenses"), orderBy("createdAt", "desc"));
+      onSnapshot(q, (snapshot) => {
+          const archiveList = document.getElementById('archive-list');
+          archiveList.innerHTML = '';
+          
+          let currentDebt = null;
+
+          snapshot.forEach((docSnap) => {
+              const data = docSnap.data();
+              const docId = docSnap.id;
+              
+              if (!data.isPaid) {
+                  // Нашли активный долг (по логике он один текущий)
+                  currentDebt = { id: docId, ...data };
+              } else {
+                  // Рисуем архив
+                  const div = document.createElement('div');
+                  div.className = 'archive-item';
+                  div.innerHTML = `
+                      <div>
+                          <div>${data.date}: ${formatVND(data.amount)}</div>
+                          <div style="font-size:12px; color:#aaa;">${data.desc} (по ${formatVND(data.amount/3)})</div>
+                      </div>
+                      ${isAdmin ? `<button class="delete-btn" data-id="${docId}">Удалить</button>` : ''}
+                  `;
+                  archiveList.appendChild(div);
+              }
+          });
+
+          // Обновляем карточку долга
+          const debtCard = document.getElementById('current-debt-card');
+          const noDebtCard = document.getElementById('no-debt-card');
+          
+          if (currentDebt) {
+              debtCard.classList.remove('hidden');
+              noDebtCard.classList.add('hidden');
+              
+              const perPerson = Math.round(currentDebt.amount / 3);
+              document.getElementById('total-debt').textContent = `-${formatVND(currentDebt.amount).replace(' VND','')}`;
+              document.getElementById('debt-desc').textContent = `${currentDebt.desc} (${currentDebt.date})`;
+              document.getElementById('per-person-debt').textContent = formatVND(perPerson).replace(' VND','');
+              
+              document.getElementById('qr-amount-text').textContent = formatVND(perPerson).replace(' VND','');
+              document.getElementById('qr-image').src = `https://img.vietqr.io/image/970436-1031159551-compact2.jpg?amount=${perPerson}&addInfo=Sbor`;
+              
+              document.getElementById('btn-mark-paid').onclick = () => {
+                  updateDoc(doc(db, "expenses", currentDebt.id), { isPaid: true });
+              };
+          } else {
+              debtCard.classList.add('hidden');
+              noDebtCard.classList.remove('hidden');
+          }
+
+          // Навешиваем удаление для админа
+          if(isAdmin) {
+             document.querySelectorAll('.delete-btn').forEach(btn => {
+                 btn.onclick = (e) => {
+                     if(confirm('Удалить запись из архива?')) {
+                         deleteDoc(doc(db, "expenses", e.target.dataset.id));
+                     }
+                 }
+             });
+          }
+      });
+
+      // Логика UI
+      document.getElementById('btn-show-qr').onclick = () => document.getElementById('qr-modal').classList.remove('hidden');
+      document.getElementById('btn-close-qr').onclick = () => document.getElementById('qr-modal').classList.add('hidden');
+      
+      document.getElementById('btn-ask-question').onclick = () => {
+          const desc = document.getElementById('debt-desc').textContent;
+          const text = encodeURIComponent(`Вопрос по сбору: ${desc} - `);
+          window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=&text=${text}`);
+      };
+
+      document.getElementById('btn-add-expense').onclick = () => {
+          document.getElementById('new-date').valueAsDate = new Date();
+          document.getElementById('add-modal').classList.remove('hidden');
+      };
+      document.getElementById('btn-close-add').onclick = () => document.getElementById('add-modal').classList.add('hidden');
+
+      document.getElementById('btn-save-new').onclick = async () => {
+          const desc = document.getElementById('new-desc').value;
+          const amount = parseInt(document.getElementById('new-amount').value);
+          const dateStr = document.getElementById('new-date').value;
+          
+          if(!desc || !amount || !dateStr) {
+              alert('Заполните все поля');
+              return;
+          }
+
+          // Форматируем дату в DD.MM.YY
+          const [yyyy, mm, dd] = dateStr.split('-');
+          const formattedDate = `${dd}.${mm}.${yyyy.slice(2)}`;
+
+          await addDoc(collection(db, "expenses"), {
+              desc: desc,
+              amount: amount,
+              date: formattedDate,
+              isPaid: false,
+              createdAt: new Date().getTime()
+          });
+          
+          document.getElementById('add-modal').classList.add('hidden');
+          document.getElementById('new-desc').value = '';
+          document.getElementById('new-amount').value = '';
+      };
+    </script>
+</body>
+</html>
