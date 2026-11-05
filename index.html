@@ -43,7 +43,7 @@
         .expense-item:last-child { border-bottom: none; }
         .hidden { display: none !important; }
         
-        #modal {
+        #modal, #qr-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 1000;
         }
@@ -74,12 +74,25 @@
                 <div class="amount positive">+297.880 VND</div>
             </div>
         </div>
+        
+        <!-- Блок добавленных итогов -->
+        <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 5px;">
+            <div>
+                <div style="font-size: 12px; color: #7f91a4;">Всего расходов:</div>
+                <div class="amount negative" id="total-expenses">0 VND</div>
+            </div>
+            <div>
+                <div style="font-size: 12px; color: #7f91a4;">Собрано на чел:</div>
+                <div class="amount positive" id="total-per-person">0 VND</div>
+            </div>
+        </div>
+
         <button class="btn btn-primary admin-only hidden" id="btn-open-add">➕ Добавить расход</button>
     </div>
 
     <!-- Список расходов из Закрепа -->
     <div class="card">
-        <div class="header">📋 Расходы компании (Закреп)</div>
+        <div class="header">📋 Расходы компании (История)</div>
         <div id="expenses-list">
             <!-- Заполняется скриптом -->
         </div>
@@ -112,14 +125,14 @@
             <h3 style="margin-top:0;">Оплата доли: <span id="qr-amount-text">0</span> VND</h3>
             <p style="font-size: 12px; color: #666;">VietcomBank<br>Счет: 1031159551</p>
             <img id="qr-image" src="" alt="QR Code" style="width: 100%; max-width: 220px; margin: 10px auto; display: block;">
-            <button class="btn btn-pay" id="btn-close-qr" style="margin-top: 10px;">Закрыть</button>
+            <button class="btn btn-pay" id="btn-close-qr" style="margin-top: 10px; color: #fff;">Закрыть</button>
         </div>
     </div>
 
     <!-- Firebase SDKs -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-      import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyCR8QpLtekoGFJk997E_RjqI6uQ6eEms3Q",
@@ -146,7 +159,7 @@
 
       const formatVND = (num) => new Intl.NumberFormat('ru-RU').format(num) + ' VND';
 
-      // Предустановленные данные из вашего Закрепа на случай пустой базы
+      // Предустановленные данные из вашего Закрепа
       const initialExpenses = [
           { date: "05.11.26", desc: "Оплата за заморозку филиала в Ханое", amount: 1500000 },
           { date: "09.10.26", desc: "Плата услуг бухгалтерии за 3 квартал", amount: 2700000 },
@@ -164,15 +177,26 @@
           { date: "29.01.26", desc: "Услуги бухгалтерии за 4 квартал 2025 года", amount: 2916000 }
       ];
 
-      // Автоматическая инициализация базы, если она пустая
+      // ИСПРАВЛЕННАЯ ИНИЦИАЛИЗАЦИЯ: проверяем наличие КАЖДОЙ записи, а не пустоту всей базы
       async function initDB() {
-          const snap = await getDocs(collection(db, "expenses"));
-          if (snap.empty) {
+          try {
+              const snap = await getDocs(collection(db, "expenses"));
+              // Создаем уникальные ключи существующих записей (дата + описание)
+              const existingKeys = snap.docs.map(doc => doc.data().date + "|" + doc.data().desc);
+              
               for (let item of initialExpenses) {
-                  await addDoc(collection(db, "expenses"), item);
+                  const key = item.date + "|" + item.desc;
+                  if (!existingKeys.includes(key)) {
+                      await addDoc(collection(db, "expenses"), item);
+                      console.log(`Добавлена запись: ${item.desc}`);
+                  }
               }
+          } catch (e) {
+              console.error("Ошибка инициализации БД: ", e);
           }
       }
+      
+      // Запускаем инициализацию
       initDB();
 
       // Слушаем базу в реальном времени
@@ -182,7 +206,17 @@
           
           let totalSum = 0;
 
-          snapshot.forEach((docSnap) => {
+          // Сортировка по дате (сначала новые)
+          const sortedDocs = snapshot.docs.sort((a, b) => {
+              const parseDate = (str) => {
+                  if(!str) return 0;
+                  const [d, m, y] = str.split('.');
+                  return new Date(`20${y}-${m}-${d}`).getTime();
+              };
+              return parseDate(b.data().date) - parseDate(a.data().date);
+          });
+
+          sortedDocs.forEach((docSnap) => {
               const data = docSnap.data();
               const id = docSnap.id;
               totalSum += Number(data.amount || 0);
@@ -192,9 +226,9 @@
               const item = document.createElement('div');
               item.className = 'expense-item';
               item.innerHTML = `
-                  <div style="flex-grow: 1;">
-                      <div style="font-weight: bold; font-size: 14px;">${data.desc}</div>
-                      <div style="font-size: 12px; color: #7f91a4;">${data.date} • Общая: ${formatVND(data.amount)}</div>
+                  <div style="flex-grow: 1; padding-right: 8px;">
+                      <div style="font-weight: bold; font-size: 14px; line-height: 1.2;">${data.desc}</div>
+                      <div style="font-size: 12px; color: #7f91a4; margin-top: 4px;">${data.date} • Общая: ${formatVND(data.amount)}</div>
                       <div style="font-size: 12px; color: #4caf50; margin-top: 2px;">Доля на чел: <b>${formatVND(perPerson)}</b></div>
                   </div>
                   <div style="display: flex; gap: 4px; align-items: center;">
@@ -207,6 +241,10 @@
               `;
               listEl.appendChild(item);
           });
+
+          // Обновляем верхнюю статистику
+          document.getElementById('total-expenses').textContent = formatVND(totalSum);
+          document.getElementById('total-per-person').textContent = formatVND(Math.round(totalSum / 3));
 
           // Навешиваем обработчики
           document.querySelectorAll('.btn-qr').forEach(btn => {
