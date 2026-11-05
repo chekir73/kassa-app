@@ -67,23 +67,23 @@
 </head>
 <body>
 
-    <!-- Бюджет и Баланс (строго по Закрепу) -->
+    <!-- Бюджет (минус) и Баланс на счете (плюс) строго по Закрепу -->
     <div class="card">
         <div class="header">📊 Бюджет и Баланс компании</div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
             <div>
                 <div style="font-size: 11px; color: #7f91a4;">Бюджет компании:</div>
-                <div class="amount">1.500.000 VND</div>
+                <div class="amount negative">-1.500.000 VND</div>
             </div>
             <div style="text-align: right;">
                 <div style="font-size: 11px; color: #7f91a4;">Баланс на счете (11.07):</div>
-                <div class="amount negative">-297.880 VND</div>
+                <div class="amount positive">+297.880 VND</div>
             </div>
         </div>
         <button class="btn btn-primary" onclick="openAddModal()">➕ Добавить операцию</button>
     </div>
 
-    <!-- Актуальный расчет на троих (только текущий платеж 1.5 млн) -->
+    <!-- Актуальный расчет на троих (текущий платеж 1.5 млн) -->
     <div class="card">
         <div class="header">🧮 Актуальный расчёт на троих</div>
         
@@ -103,11 +103,11 @@
         
         <div id="history-content" class="hidden" style="margin-top: 10px;">
             <div class="expense-item">
-                <div><b>09.10.26</b><br><span style="font-size: 13px;">Плата услуг бухгалтерии за 3 кв.</span></div>
+                <div><b>09.10.26</b><br><span style="font-size: 13px;">Плата услуг бухгалтерии за 3 квартал</span></div>
                 <div style="text-align: right;"><b class="negative">-2.700.000</b></div>
             </div>
             <div class="expense-item">
-                <div><b>30.07.26</b><br><span style="font-size: 13px;">Плата услуг бухгалтерии за 2 кв.</span></div>
+                <div><b>30.07.26</b><br><span style="font-size: 13px;">Плата услуг бухгалтерии за 2 квартал</span></div>
                 <div style="text-align: right;"><b class="negative">-1.700.000</b></div>
             </div>
             <div class="expense-item">
@@ -127,15 +127,15 @@
                 <div style="text-align: right;"><b class="negative">-3.279.525</b></div>
             </div>
             <div class="expense-item">
-                <div><b>19.06.26</b><br><span style="font-size: 13px;">Снятие с учёта / закрытие филиала</span></div>
+                <div><b>19.06.26</b><br><span style="font-size: 13px;">Снятие сотрудников с учёта и закрытие филиала</span></div>
                 <div style="text-align: right;"><b class="negative">-3.832.000</b></div>
             </div>
             <div class="expense-item">
-                <div><b>19.05.26</b><br><span style="font-size: 13px;">Услуги бухучета (подача отчёта)</span></div>
+                <div><b>19.05.26</b><br><span style="font-size: 13px;">Бухгалтерия: составление и подача отчёта</span></div>
                 <div style="text-align: right;"><b class="negative">-324.000</b></div>
             </div>
             <div class="expense-item">
-                <div><b>08.04.26</b><br><span style="font-size: 13px;">Бух. услуги за 1 квартал 2026</span></div>
+                <div><b>08.04.26</b><br><span style="font-size: 13px;">Бухг. услуги за 1 квартал 2026</span></div>
                 <div style="text-align: right;"><b class="negative">-2.160.000</b></div>
             </div>
             <div class="expense-item">
@@ -151,12 +151,11 @@
                 <div style="text-align: right;"><b class="negative">-3.000.000</b></div>
             </div>
             <div class="expense-item">
-                <div><b>29.01.26</b><br><span style="font-size: 13px;">Бухучет за 4 квартал 2025 года</span></div>
+                <div><b>29.01.26</b><br><span style="font-size: 13px;">Услуги бухгалтерии за 4 квартал 2025 года</span></div>
                 <div style="text-align: right;"><b class="negative">-2.916.000</b></div>
             </div>
         </div>
         
-        <!-- Новые добавленные через форму операции попадут сюда -->
         <div id="dynamic-history" style="margin-top: 8px;"></div>
     </div>
 
@@ -167,8 +166,8 @@
             
             <label style="font-size: 11px; color: #7f91a4;">Тип операции</label>
             <select id="op-type" class="input-field">
-                <option value="expense">🔴 Расход (уменьшает баланс)</option>
-                <option value="income">🟢 Приход / Поступление (увеличивает баланс)</option>
+                <option value="expense">🔴 Расход</option>
+                <option value="income">🟢 Приход / Поступление</option>
             </select>
 
             <label style="font-size: 11px; color: #7f91a4;">Дата (ДД.ММ.ГГ)</label>
